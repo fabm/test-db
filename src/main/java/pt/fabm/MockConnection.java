@@ -1,18 +1,19 @@
 package pt.fabm;
 
+import com.google.common.reflect.Reflection;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.sql.*;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
-public class MockConnection implements Connection
-{
+public class MockConnection implements Connection {
     @Inject
     @Named("sql-map")
-    private Map<String,SqlBehavior> sqlMap;
+    private Map<String, SqlBehavior> sqlMap;
 
     @Override
     public Statement createStatement() throws SQLException {
@@ -22,15 +23,23 @@ public class MockConnection implements Connection
     @Override
     public PreparedStatement prepareStatement(String sql) throws SQLException {
         SqlBehavior sqlbehavior = sqlMap.get(sql);
-        if(!sqlMap.containsKey(sql)){
-            throw new MockSqlException("there is no mock for sql:'"+sql+"'");
-        };
+        if (!sqlMap.containsKey(sql)) {
+            throw new MockSqlException("there is no mock for sql:'" + sql + "'");
+        }
+        ;
         return new PreparedStatementMock(sqlbehavior);
     }
 
     @Override
     public CallableStatement prepareCall(String sql) throws SQLException {
-        return null;
+        return Reflection.newProxy(CallableStatement.class, (proxy, method, args) -> {
+            switch (method.getName()) {
+                case "getResultSet":
+                    return sqlMap.get(sql).asQuery().getResultSet();
+                default:
+                    throw new NotImplementedException();
+            }
+        });
     }
 
     @Override

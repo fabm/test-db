@@ -10,17 +10,6 @@ import java.util.logging.Logger;
 
 public class MockDriver implements Driver {
 
-    static final Injector INJECTOR;
-    static {
-        try {
-            MockDriver mockDriver = new MockDriver();
-            DriverManager.registerDriver(mockDriver);
-            INJECTOR = Guice.createInjector(new AppModule());
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     @Override
     public Connection connect(String url, Properties info) throws SQLException {
         return AppModule.getInjector().getInstance(MockConnection.class);
