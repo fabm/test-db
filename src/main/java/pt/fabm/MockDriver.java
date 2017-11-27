@@ -1,18 +1,38 @@
 package pt.fabm;
 
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
+import com.google.common.reflect.Reflection;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 
 import java.sql.*;
+import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Logger;
 
 public class MockDriver implements Driver {
 
+    @Inject
+    @Named("sql-connections")
+    private Map<String,Connection> connections;
+
+    @Inject
+    @Named("sql-callable-statements")
+    private Map<String,Connection> callableStatements;
+
+
     @Override
     public Connection connect(String url, Properties info) throws SQLException {
-        return AppModule.getInjector().getInstance(MockConnection.class);
+        Connection proxy = connections.get(url);
+        if(proxy == null){
+            connections.put(url, Reflection.newProxy(Connection.class, (proxy1, method, args) -> {
+                switch (method.getName()){
+
+                }
+                return null;
+            }));
+        }
+        return connections.get(url);
     }
 
     @Override

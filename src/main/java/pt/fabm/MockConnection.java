@@ -1,135 +1,120 @@
 package pt.fabm;
 
+import com.google.common.reflect.AbstractInvocationHandler;
 import com.google.common.reflect.Reflection;
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
+import java.lang.reflect.Method;
 import java.sql.*;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
-public class MockConnection implements Connection {
-    @Inject
-    @Named("sql-map")
-    private Map<String, SqlBehavior> sqlMap;
+public class MockConnection implements Connection{
+
 
     @Override
     public Statement createStatement() throws SQLException {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql) throws SQLException {
-        SqlBehavior sqlbehavior = sqlMap.get(sql);
-        if (!sqlMap.containsKey(sql)) {
-            throw new MockSqlException("there is no mock for sql:'" + sql + "'");
-        }
-        ;
-        return new PreparedStatementMock(sqlbehavior);
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public CallableStatement prepareCall(String sql) throws SQLException {
-        return Reflection.newProxy(CallableStatement.class, (proxy, method, args) -> {
-            switch (method.getName()) {
-                case "getResultSet":
-                    return sqlMap.get(sql).asQuery().getResultSet();
-                default:
-                    throw new NotImplementedException();
-            }
-        });
+        return null;
     }
 
     @Override
     public String nativeSQL(String sql) throws SQLException {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void setAutoCommit(boolean autoCommit) throws SQLException {
-
+        //do nothing
     }
 
     @Override
     public boolean getAutoCommit() throws SQLException {
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void commit() throws SQLException {
-
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void rollback() throws SQLException {
-
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void close() throws SQLException {
-
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean isClosed() throws SQLException {
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public DatabaseMetaData getMetaData() throws SQLException {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void setReadOnly(boolean readOnly) throws SQLException {
-
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean isReadOnly() throws SQLException {
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void setCatalog(String catalog) throws SQLException {
-
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public String getCatalog() throws SQLException {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void setTransactionIsolation(int level) throws SQLException {
-
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public int getTransactionIsolation() throws SQLException {
-        return 0;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public SQLWarning getWarnings() throws SQLException {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void clearWarnings() throws SQLException {
-
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override

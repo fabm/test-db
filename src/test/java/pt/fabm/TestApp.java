@@ -2,36 +2,33 @@ package pt.fabm;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.ByteSource;
-import com.google.common.io.Files;
-import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
-import com.google.inject.util.Modules;
+import com.microsoft.sqlserver.jdbc.SQLServerDriver;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
 import org.apache.activemq.broker.BrokerService;
-import org.apache.activemq.transport.TransportServer;
-import org.apache.activemq.transport.vm.VMTransportFactory;
+import org.apache.tomcat.jdbc.pool.DataSource;
 import org.codehaus.groovy.control.CompilerConfiguration;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.jms.*;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.*;
 import java.sql.Connection;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class TestApp {
 
@@ -43,6 +40,49 @@ public class TestApp {
         AppModule.setInjector(INJECTOR);
     }
 
+    @Test
+    public void testDataSource() throws SQLException, ClassNotFoundException, URISyntaxException, IOException {
+
+        DataSource ds = new DataSource();
+        ds.setDriverClassName(SQLServerDriver.class.getCanonicalName());
+        ds.setUrl("bla bla");
+        ds.setUsername("user");
+        ds.setPassword("pass");
+        ds.setInitialSize(5);
+        ds.setMaxActive(10);
+        ds.setMaxIdle(5);
+        ds.setMinIdle(2);
+
+        CompilerConfiguration config = new CompilerConfiguration();
+        config.setScriptBaseClass("pt.fabm.DbGroovyScript");
+        GroovyShell shell = new GroovyShell(config);
+        Script script = shell.parse(TestApp.class.getResource("/Script4DB.groovy").toURI());
+        script.run();
+
+        Connection connection = ds.getConnection();
+        CallableStatement cs = connection.prepareCall("call MY_TEST_SEARCH(?,?,?,?,?,?,?)");
+
+        ResultSet rs = cs.getResultSet();
+
+        Assert.assertTrue(rs.next());
+
+        Assert.assertEquals(1, rs.getInt(1));
+        Assert.assertEquals("a", rs.getString(2));
+        Assert.assertEquals(3, rs.getInt(3));
+        Assert.assertNull(rs.getDate(4));
+
+        Assert.assertTrue(rs.next());
+
+        LocalDateTime date = LocalDateTime.of(2017, 1, 1, 0, 0, 0, 0);
+
+        Assert.assertEquals(2, rs.getInt(1));
+        Assert.assertEquals("b", rs.getString(2));
+        Assert.assertEquals(5, rs.getInt(3));
+        Assert.assertEquals(java.sql.Date.valueOf(date.toLocalDate()), rs.getDate(4));
+
+        Assert.assertFalse(rs.next());
+    }
+
 
     @Test
     public void testApp() throws ClassNotFoundException, SQLException {
@@ -52,6 +92,7 @@ public class TestApp {
         final SqlBehaviorQuery sqlBehaviorQuery = new SqlBehaviorQuery();
     }
 
+
     @Test
     public void testGroovyScript() throws URISyntaxException, IOException, ClassNotFoundException, SQLException {
 
@@ -60,7 +101,6 @@ public class TestApp {
         GroovyShell shell = new GroovyShell(config);
         Script script = shell.parse(TestApp.class.getResource("/Script4DB.groovy").toURI());
         script.run();
-
 
         Class.forName("pt.fabm.MockDriver");
         Connection connection = DriverManager.getConnection("xpto");
@@ -150,9 +190,9 @@ public class TestApp {
 
         consumer.setMessageListener(m -> {
             try {
-                System.out.println("trying:"+System.nanoTime());
+                System.out.println("trying:" + System.nanoTime());
                 Thread.sleep(5000);
-                System.out.println("done:"+System.nanoTime());
+                System.out.println("done:" + System.nanoTime());
                 String t = Optional.ofNullable(m).map(e -> (TextMessage) e).orElse(null).getText();
                 asyncResponse.setResponse(t);
             } catch (JMSException e) {
