@@ -1,0 +1,99 @@
+package pt.fabm;
+
+import com.google.common.collect.ImmutableMap;
+
+import java.lang.reflect.Method;
+import java.sql.CallableStatement;
+import java.sql.Date;
+import java.util.*;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
+
+public class PrepareCallMock implements CallableStatementProxy {
+
+    private List<Object> vars = new ArrayList<>();
+    private List<List<Object>> rows = new ArrayList<>();
+    private Iterator<List<Object>> rowsIterator;
+    private Map<String, Integer> outMap;
+    private Map<String, Integer> inMap;
+    private CallableStatement proxy;
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(vars.toArray());
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return Optional.ofNullable(obj)
+                .filter(PrepareCallMock.class::isInstance)
+                .map(PrepareCallMock.class::cast)
+                .filter(vars::equals)
+                .isPresent();
+    }
+
+    @Override
+    public void setRows(List<List<Object>> rows) {
+        this.rows = rows;
+    }
+
+    @Override
+    public void setVars(List<Object> vars) {
+        this.vars = vars;
+    }
+
+    @Override
+    public void setResultSetMap(Map<String, Integer> outMap) {
+        this.outMap = outMap;
+    }
+
+    @Override
+    public void setInMap(Map<String, Integer> inMap) {
+        this.inMap = inMap;
+    }
+
+    @Override
+    public void setProxy(CallableStatement proxy) {
+        this.proxy = proxy;
+    }
+
+    @Override
+    public CallableStatement getProxy() {
+        return proxy;
+    }
+
+    private boolean createResultSet(){
+        if(rows == null){
+            return false;
+        }
+        rowsIterator = rows.iterator();
+        return true;
+    }
+
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        String name = method.getName();
+
+        List<String> types = Arrays.asList(
+                "Int",
+                "String",
+                "Date"
+        );
+
+        Predicate<String> isMethodType = str-> types.stream().filter(e->str.startsWith(e)).findAny().isPresent();
+
+        if (name.startsWith("set") && args.length == 2 && isMethodType.test(name.substring(3))) {
+            vars.add((Integer) args[0],args[1]);
+            return null;
+        }
+
+        if(name.equals("getResultSet")){
+            return createResultSet();
+        }
+
+        if(name.startsWith("get") && args.length == 2 && isMethodType.test(name.substring(3))){
+
+        }
+        return null;
+    }
+}

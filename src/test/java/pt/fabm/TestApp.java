@@ -23,12 +23,15 @@ import java.net.URISyntaxException;
 import java.sql.*;
 import java.sql.Connection;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class TestApp {
 
@@ -87,9 +90,8 @@ public class TestApp {
     @Test
     public void testApp() throws ClassNotFoundException, SQLException {
         Connection connection = DriverManager.getConnection("xpto");
-        Map<String, SqlBehavior> map = INJECTOR.getInstance(Key.get(new TypeLiteral<Map<String, SqlBehavior>>() {
+        Map<String, Connection> map = INJECTOR.getInstance(Key.get(new TypeLiteral<Map<String, Connection>>() {
         }, Names.named("sql-map")));
-        final SqlBehaviorQuery sqlBehaviorQuery = new SqlBehaviorQuery();
     }
 
 

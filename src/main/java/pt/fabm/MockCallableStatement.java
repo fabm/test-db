@@ -10,13 +10,13 @@ import java.sql.*;
 import java.sql.Date;
 import java.util.*;
 
-public class MockCallableSatement implements CallableStatement {
+public class MockCallableStatement implements CallableStatement {
 
     private Map<String, Integer> orderMapping = new HashMap<>();
     private List<List<Object>> values = new ArrayList<>();
     private CallableStatement delegateMock;
 
-    public MockCallableSatement() {
+    public MockCallableStatement() {
         delegateMock = Reflection.newProxy(CallableStatement.class, (proxy, method, args) -> {
             throw new UnsupportedOperationException();
         });

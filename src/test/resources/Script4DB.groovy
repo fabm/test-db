@@ -1,11 +1,12 @@
-import java.time.LocalDateTime
+prepareCall('call MY_TEST_SEARCH(?,?,?,?,?,?,?)') {
+    rows << [1, 'a', 3, null]
+    rows << [2, 'b', 5, date(2017, 1, 1)]
 
-resultSet('call MY_TEST_SEARCH(?,?,?,?,?,?,?)') {
-    rows << [1,'a',3,null]
-    rows << [2, 'b', 5, date(2017,1,1)]
+    vars = []
 
-    vars = [
-            RETURN: 'OK',
-            LABEL:'COOL'
+    outVars = [
+            'OK',
+            'COOL'
     ]
+
 }

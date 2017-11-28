@@ -1,7 +1,7 @@
 package pt.fabm;
 
 import com.google.inject.*;
-import com.google.inject.name.Names;
+import com.google.inject.name.Named;
 import com.microsoft.sqlserver.jdbc.SQLServerDriver;
 import org.apache.activemq.ActiveMQConnectionFactory;
 
@@ -14,7 +14,6 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class AppModule extends AbstractModule {
 
@@ -33,6 +32,13 @@ public class AppModule extends AbstractModule {
 
     private Map<String, java.sql.Connection> sqlMap = new HashMap<>();
 
+
+
+    @Provides
+    private ConnectionProxy getConnectionMock(Injector injector) {
+        return injector.getInstance(ConnectionMock.class);
+    }
+
     @Provides
     @Singleton
     private Connection getJMSConnection() throws JMSException, IOException {
@@ -40,6 +46,12 @@ public class AppModule extends AbstractModule {
         properties.load(AppModule.class.getResourceAsStream("/application.properties"));
         ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory(properties.getProperty("jms"));
         return factory.createConnection();
+    }
+
+    @Provides
+    @Named("sql-connections")
+    private Map<String, java.sql.Connection> getConnectionsMap() {
+        return sqlMap;
     }
 
     @Provides
@@ -57,7 +69,5 @@ public class AppModule extends AbstractModule {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        bind(new TypeLiteral<Map<String, java.sql.Connection>>() {
-        }).annotatedWith(Names.named("sql-map")).toInstance(sqlMap);
     }
 }
