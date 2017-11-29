@@ -23,15 +23,12 @@ import java.net.URISyntaxException;
 import java.sql.*;
 import java.sql.Connection;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class TestApp {
 
@@ -65,6 +62,15 @@ public class TestApp {
         Connection connection = ds.getConnection();
         CallableStatement cs = connection.prepareCall("call MY_TEST_SEARCH(?,?,?,?,?,?,?)");
 
+        cs.setString(1, "a");
+        cs.setString(2, "b");
+        cs.setString(3, "c");
+        cs.setInt(4, 1);
+        cs.setInt(5, 2);
+        cs.registerOutParameter(6, Types.VARCHAR);
+        cs.registerOutParameter(7, Types.INTEGER);
+
+        Assert.assertTrue(cs.execute());
         ResultSet rs = cs.getResultSet();
 
         Assert.assertTrue(rs.next());
@@ -84,6 +90,8 @@ public class TestApp {
         Assert.assertEquals(java.sql.Date.valueOf(date.toLocalDate()), rs.getDate(4));
 
         Assert.assertFalse(rs.next());
+        cs.close();
+        connection.close();
     }
 
 

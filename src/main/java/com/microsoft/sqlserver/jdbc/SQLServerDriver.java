@@ -1,5 +1,6 @@
 package com.microsoft.sqlserver.jdbc;
 
+import pt.fabm.AppModule;
 import pt.fabm.MockDriver;
 
 import java.sql.*;
@@ -7,7 +8,7 @@ import java.util.Properties;
 import java.util.logging.Logger;
 
 public class SQLServerDriver implements Driver {
-    private Driver mock = new MockDriver();
+    private Driver mock = AppModule.getInjector().getInstance(MockDriver.class);
 
     @Override
     public Connection connect(String url, Properties info) throws SQLException {

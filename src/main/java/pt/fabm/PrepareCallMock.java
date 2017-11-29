@@ -1,19 +1,15 @@
 package pt.fabm;
 
-import com.google.common.collect.ImmutableMap;
-
 import java.lang.reflect.Method;
 import java.sql.CallableStatement;
-import java.sql.Date;
+import java.sql.ResultSet;
 import java.util.*;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 public class PrepareCallMock implements CallableStatementProxy {
 
     private List<Object> vars = new ArrayList<>();
     private List<List<Object>> rows = new ArrayList<>();
-    private Iterator<List<Object>> rowsIterator;
     private Map<String, Integer> outMap;
     private Map<String, Integer> inMap;
     private CallableStatement proxy;
@@ -30,6 +26,11 @@ public class PrepareCallMock implements CallableStatementProxy {
                 .map(PrepareCallMock.class::cast)
                 .filter(vars::equals)
                 .isPresent();
+    }
+
+    @Override
+    public List<List<Object>> getRows() {
+        return rows;
     }
 
     @Override
@@ -62,12 +63,13 @@ public class PrepareCallMock implements CallableStatementProxy {
         return proxy;
     }
 
-    private boolean createResultSet(){
+    private ResultSet createResultSet(){
         if(rows == null){
-            return false;
+            return null;
         }
-        rowsIterator = rows.iterator();
-        return true;
+        ResultSetProxyWrapper resultSetProxyWrapper = AppModule.getInjector().getInstance(ResultSetProxyWrapper.class);
+        resultSetProxyWrapper.setIterator(rows.iterator());
+        return resultSetProxyWrapper.getProxy();
     }
 
     @Override
@@ -80,20 +82,21 @@ public class PrepareCallMock implements CallableStatementProxy {
                 "Date"
         );
 
-        Predicate<String> isMethodType = str-> types.stream().filter(e->str.startsWith(e)).findAny().isPresent();
+        Predicate<String> isMethodType = str-> types.stream().anyMatch(str::startsWith);
 
         if (name.startsWith("set") && args.length == 2 && isMethodType.test(name.substring(3))) {
-            vars.add((Integer) args[0],args[1]);
+            vars.add((Integer) args[0]-1,args[1]);
             return null;
+        }
+
+        if(name.equals("execute")){
+            return true;
         }
 
         if(name.equals("getResultSet")){
             return createResultSet();
         }
 
-        if(name.startsWith("get") && args.length == 2 && isMethodType.test(name.substring(3))){
-
-        }
         return null;
     }
 }

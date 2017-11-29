@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface CallableStatementProxy extends ProxyWrapper<CallableStatement>{
+    List<List<Object>> getRows();
     void setRows(List<List<Object>> rows);
     void setVars(List<Object> vars);
     void setResultSetMap(Map<String,Integer> outMap);

@@ -4,6 +4,7 @@ package pt.fabm;
 import com.google.common.reflect.Reflection;
 import com.google.inject.Inject;
 import com.google.inject.Key;
+import com.google.inject.TypeLiteral;
 import com.google.inject.name.Named;
 
 import java.sql.*;
@@ -16,17 +17,12 @@ public class MockDriver implements Driver {
 
     @Inject
     @Named("sql-connections")
-    private Map<String, ProxyWrapper<Connection>> connections;
+    private Map<String, ConnectionProxy> connections;
+
 
     @Override
     public Connection connect(String url, Properties info) throws SQLException {
-        ProxyWrapper<Connection> connectionMock = connections.get(url);
-        if (Objects.isNull(connectionMock)) {
-            connectionMock = AppModule.getInjector().getInstance(Key.get(Type.get()));
-            connectionMock.setProxy(Reflection.newProxy(Connection.class, connectionMock));
-            connections.put(url, connectionMock);
-        }
-        return connectionMock.getProxy();
+        return connections.get(url).getProxy();
     }
 
     @Override
