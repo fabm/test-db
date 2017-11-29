@@ -38,6 +38,7 @@ public class TestApp {
     public static void setUp() throws Exception {
         INJECTOR = TestModule.getInjector();
         AppModule.setInjector(INJECTOR);
+        DriverManager.registerDriver(INJECTOR.getInstance(MockDriver.class));
     }
 
     @Test
@@ -97,9 +98,14 @@ public class TestApp {
 
     @Test
     public void testApp() throws ClassNotFoundException, SQLException {
-        Connection connection = DriverManager.getConnection("xpto");
-        Map<String, Connection> map = INJECTOR.getInstance(Key.get(new TypeLiteral<Map<String, Connection>>() {
-        }, Names.named("sql-map")));
+        final MockDriver instance = AppModule.getInjector().getInstance(MockDriver.class);
+        DriverManager.registerDriver(instance);
+        Map<String, ProxyWrapper<Connection>> map = INJECTOR
+                .getInstance(Key.get(new TypeLiteral<Map<String, ProxyWrapper<Connection>>>() {
+                }, Names.named("sql-connections")));
+        map.put("...", AppModule.getInjector().getInstance(Key.get(new TypeLiteral<ProxyWrapper<Connection>>() {
+        })));
+        DriverManager.getConnection("...");
     }
 
 
@@ -112,8 +118,8 @@ public class TestApp {
         Script script = shell.parse(TestApp.class.getResource("/Script4DB.groovy").toURI());
         script.run();
 
-        Class.forName("pt.fabm.MockDriver");
-        Connection connection = DriverManager.getConnection("xpto");
+
+        Connection connection = DriverManager.getConnection("bla bla");
         CallableStatement cs = connection.prepareCall("call MY_TEST_SEARCH(?,?,?,?,?,?,?)");
 
         ResultSet rs = cs.getResultSet();

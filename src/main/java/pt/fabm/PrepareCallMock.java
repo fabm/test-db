@@ -1,12 +1,14 @@
 package pt.fabm;
 
+import pt.fabm.script.CallableStatementScript;
+
 import java.lang.reflect.Method;
 import java.sql.CallableStatement;
 import java.sql.ResultSet;
 import java.util.*;
 import java.util.function.Predicate;
 
-public class PrepareCallMock implements CallableStatementProxy {
+public class PrepareCallMock implements CallableStatementWrapper, CallableStatementScript {
 
     private List<Object> vars = new ArrayList<>();
     private List<List<Object>> rows = new ArrayList<>();
@@ -54,6 +56,21 @@ public class PrepareCallMock implements CallableStatementProxy {
     }
 
     @Override
+    public List<Object> getVars() {
+        return vars;
+    }
+
+    @Override
+    public Map<String, Integer> getInMap() {
+        return inMap;
+    }
+
+    @Override
+    public Map<String, Integer> getOutMap() {
+        return outMap;
+    }
+
+    @Override
     public void setProxy(CallableStatement proxy) {
         this.proxy = proxy;
     }
@@ -63,8 +80,8 @@ public class PrepareCallMock implements CallableStatementProxy {
         return proxy;
     }
 
-    private ResultSet createResultSet(){
-        if(rows == null){
+    private ResultSet createResultSet() {
+        if (rows == null) {
             return null;
         }
         ResultSetProxyWrapper resultSetProxyWrapper = AppModule.getInjector().getInstance(ResultSetProxyWrapper.class);
@@ -82,21 +99,29 @@ public class PrepareCallMock implements CallableStatementProxy {
                 "Date"
         );
 
-        Predicate<String> isMethodType = str-> types.stream().anyMatch(str::startsWith);
+        Predicate<String> isMethodType = str -> types.stream().anyMatch(str::startsWith);
 
         if (name.startsWith("set") && args.length == 2 && isMethodType.test(name.substring(3))) {
-            vars.add((Integer) args[0]-1,args[1]);
+            vars.add((Integer) args[0] - 1, args[1]);
             return null;
         }
 
-        if(name.equals("execute")){
+        if (name.equals("execute")) {
             return true;
         }
 
-        if(name.equals("getResultSet")){
+        if (name.equals("getResultSet")) {
             return createResultSet();
         }
 
         return null;
+    }
+
+    @Override
+    public void init(CallableStatementScript callableStatementScript) {
+        rows = callableStatementScript.getRows();
+        vars = callableStatementScript.getVars();
+        inMap = callableStatementScript.getInMap();
+        outMap = callableStatementScript.getOutMap();
     }
 }

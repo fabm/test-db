@@ -17,7 +17,7 @@ public class MockDriver implements Driver {
 
     @Inject
     @Named("sql-connections")
-    private Map<String, ConnectionProxy> connections;
+    private Map<String, ProxyWrapper<java.sql.Connection>> connections;
 
 
     @Override

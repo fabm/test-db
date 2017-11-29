@@ -4,18 +4,21 @@ import com.google.common.reflect.Reflection;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import groovy.lang.Closure;
+import pt.fabm.script.CallableStatementScript;
+import pt.fabm.script.ConnectionScript;
 
 import java.lang.reflect.Method;
 import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-public class ConnectionMock implements ConnectionProxy {
+public class ConnectionMock implements ProxyWrapper<Connection>,ConnectionScript {
 
-    private Map<String, ProxyWrapper<CallableStatement>> callableStatements = new HashMap<>();
+    private Map<String, CallableStatementWrapper> callableStatements = new HashMap<>();
 
     private Connection proxy;
 
@@ -42,37 +45,31 @@ public class ConnectionMock implements ConnectionProxy {
 
 
     @Override
-    public ProxyWrapper<CallableStatement> getCallableStatement(String sql) {
-
-        Supplier<ProxyWrapper<CallableStatement>> supplier = () -> {
-            ProxyWrapper<CallableStatement> newCallableStatement = AppModule
-                    .getInjector()
-                    .getInstance(Key.get(Type.get()));
-
-            callableStatements.put(sql, newCallableStatement);
-            return newCallableStatement;
-        };
-
-        return Optional.ofNullable(callableStatements.get(sql)).orElseGet(supplier);
-    }
-
-    @Override
     public void prepareCall(String sql, Closure closure) {
 
-        Supplier<CallableStatementProxy> supplier = () -> {
-            CallableStatementProxy newCallableStatement = AppModule
+        Supplier<CallableStatementWrapper> supplier = () -> {
+            CallableStatementWrapper newCallableStatement = AppModule
                     .getInjector()
-                    .getInstance(Key.get(new TypeLiteral<CallableStatementProxy>(){}));
+                    .getInstance(CallableStatementWrapper.class);
 
-            newCallableStatement.setProxy(Reflection.newProxy(CallableStatement.class,newCallableStatement));
             callableStatements.put(sql, newCallableStatement);
             return newCallableStatement;
         };
 
+        CallableStatementScript callableStatementScript = AppModule
+                .getInjector()
+                .getInstance(CallableStatementScript.class);
 
-        closure.setDelegate(Optional.ofNullable(callableStatements.get(sql)).orElseGet(supplier));
+
+        final CallableStatementWrapper callableStatementWrapper = Optional.ofNullable(callableStatements.get(sql))
+                .orElseGet(supplier);
+
+        callableStatementScript.setRows(new ArrayList<>());
+
+        closure.setDelegate(callableStatementScript);
         closure.setResolveStrategy(Closure.DELEGATE_FIRST);
         closure.call();
 
+        callableStatementWrapper.init(callableStatementScript);
     }
 }

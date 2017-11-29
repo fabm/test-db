@@ -5,11 +5,14 @@ import com.google.inject.*;
 import com.google.inject.name.Named;
 import com.microsoft.sqlserver.jdbc.SQLServerDriver;
 import org.apache.activemq.ActiveMQConnectionFactory;
+import pt.fabm.script.CallableStatementScript;
+import pt.fabm.script.ConnectionScript;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.Session;
 import java.io.IOException;
+import java.sql.CallableStatement;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -41,20 +44,23 @@ public class AppModule extends AbstractModule {
         }
     }
 
-    public static void init(){
-        init(getInjector());
-    }
-
     public static void setInjector(Injector injector) {
         AppModule.injector = injector;
     }
 
-    private Map<String, ConnectionProxy> sqlMap = new HashMap<>();
+    private Map<String, ProxyWrapper<java.sql.Connection>> sqlMap = new HashMap<>();
 
 
     @Provides
-    private CallableStatementProxy getCallableStatementProxy(Injector injector){
+    private CallableStatementScript getCallableStatementScript(Injector injector){
         return injector.getInstance(PrepareCallMock.class);
+    }
+
+    @Provides
+    private CallableStatementWrapper getCallableStatementProxy(Injector injector){
+        final CallableStatementWrapper instance = injector.getInstance(PrepareCallMock.class);
+        instance.setProxy(Reflection.newProxy(CallableStatement.class, instance));
+        return instance;
     }
 
     @Provides
@@ -65,8 +71,10 @@ public class AppModule extends AbstractModule {
     }
 
     @Provides
-    private ConnectionProxy getConnectionMock(Injector injector) {
-        return injector.getInstance(ConnectionMock.class);
+    private ConnectionScript getConnectionMock(Injector injector) {
+        ConnectionMock connectionMock = injector.getInstance(ConnectionMock.class);
+        connectionMock.setProxy(Reflection.newProxy(java.sql.Connection.class, connectionMock));
+        return connectionMock;
     }
 
     @Provides
@@ -79,13 +87,15 @@ public class AppModule extends AbstractModule {
     }
 
     @Provides
-    private ProxyWrapper<java.sql.Connection> getProxyWrapper(Injector injector){
-        return injector.getInstance(ConnectionMock.class);
+    private ProxyWrapper<java.sql.Connection> getConnectionProxyWrapper(Injector injector){
+        final ConnectionMock instance = injector.getInstance(ConnectionMock.class);
+        instance.setProxy(Reflection.newProxy(java.sql.Connection.class,instance));
+        return instance;
     }
 
     @Provides
     @Named("sql-connections")
-    private Map<String, ConnectionProxy> getConnectionsMap() {
+    private Map<String, ProxyWrapper<java.sql.Connection>> getConnectionsMap() {
         return sqlMap;
     }
 
