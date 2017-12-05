@@ -8,6 +8,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.mockito.Mockito.when;
@@ -52,7 +53,7 @@ public class ResultSetAdapter {
         if (Class.class.isInstance(current)) {
             return permut(Class.class.cast(current));
         }
-        return permut(current.getClass());
+        return permut(Optional.ofNullable(current).map(Object::getClass).orElse(null));
     }
 
     private void addGetters() {
@@ -68,7 +69,6 @@ public class ResultSetAdapter {
                         .filter(method ->
                                 method.getName().equalsIgnoreCase("get" + types[finalCol]) &&
                                         method.getParameterCount() == 1 &&
-                                        getType(finalCol) == method.getReturnType() &&
                                         method.getParameters()[0].getType() == int.class
                         )
                         .findAny().get();

@@ -16,6 +16,7 @@ dependencies {
     compile 'org.codehaus.groovy:groovy-all:2.3.11'
     compile group: 'com.google.inject', name: 'guice', version: '4.1.0'
     compile group:'org.apache.tomcat', name:'tomcat-jdbc', version:'7.0.35'
+    compile group: 'org.mockito', name: 'mockito-core', version: '2.12.0'
 
     //testCompile "org.zapodot:embedded-jms-junit:0.1"
     testCompile group: 'org.apache.activemq', name: 'activemq-kahadb-store', version: '5.15.2'
