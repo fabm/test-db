@@ -29,14 +29,10 @@ public class ResultSetAdapter {
     }
 
     private Object getValue(int column) {
-        Object current = currentRow.get(column);
-        if (Class.class.isInstance(current)) {
-            return null;
-        }
-        return current;
+        return currentRow.get(column);
     }
 
-    public ResultSetAdapter(ResultSet mock, List<List<Object>> rows) throws SQLException {
+    ResultSetAdapter(ResultSet mock, List<List<Object>> rows) throws SQLException {
         this.mock = mock;
         this.rows = rows;
         this.iterator = rows.iterator();
@@ -71,7 +67,7 @@ public class ResultSetAdapter {
                                         method.getParameterCount() == 1 &&
                                         method.getParameters()[0].getType() == int.class
                         )
-                        .findAny().get();
+                        .findAny().orElseThrow(()->new IllegalStateException("Illegal method"));
 
                 try {
                     Mockito.when(methodRef.invoke(mock, finalCol + 1)).then(invocation -> getValue(finalCol));

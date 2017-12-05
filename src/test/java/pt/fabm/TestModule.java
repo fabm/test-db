@@ -3,6 +3,7 @@ package pt.fabm;
 import com.google.common.io.Files;
 import com.google.inject.*;
 import com.google.inject.util.Modules;
+import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.transport.TransportServer;
 import org.apache.activemq.transport.vm.VMTransportFactory;
@@ -10,24 +11,36 @@ import org.apache.activemq.transport.vm.VMTransportFactory;
 import javax.jms.JMSException;
 import javax.jms.Session;
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
+import java.util.Properties;
 
-public class TestModule extends AbstractModule {
-
-    private static Injector INJECTOR;
-
-    public static Injector getInjector() {
-        if (INJECTOR == null) {
-            INJECTOR = Guice.createInjector(Modules.override(new AppModule()).with(new TestModule()));
-        }
-        return INJECTOR;
-    }
+public class TestModule {
 
     private BrokerService brokerService;
+    private javax.jms.Connection connection;
 
-    @Provides
-    @Singleton
-    private BrokerService getBrokerService() throws Exception {
+    void setup() throws Exception {
+        createBrokerService();
+        createConnection();
+        createSession();
+    }
+
+    public void tearDown() throws Exception {
+        connection.close();
+        brokerService.stop();
+    }
+
+    private void createConnection() throws JMSException, IOException {
+        Properties properties = new Properties();
+        properties.load(TestModule.class.getResourceAsStream("/application.properties"));
+        ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory(properties.getProperty("jms"));
+        connection = factory.createConnection();
+        connection.start();
+    }
+
+
+    private void createBrokerService() throws Exception {
         BrokerService brokerService = new BrokerService();
         brokerService.setBrokerName("localhost");
         brokerService.setStartAsync(false);
@@ -36,21 +49,11 @@ public class TestModule extends AbstractModule {
         URI vmUri = new URI(String.format("vm://%s?marshal=%s", "mocks", true));
         TransportServer transportServer = new VMTransportFactory().doBind(vmUri);
         brokerService.addConnector(transportServer);
-        return brokerService;
+        this.brokerService = brokerService;
     }
 
-    @Provides
-    private Session getSession(javax.jms.Connection connection) throws JMSException {
-        connection.start();
+    Session createSession() throws JMSException {
         return connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
     }
-
-    ;
-
-
-    @Override
-    protected void configure() {
-    }
-
 
 }

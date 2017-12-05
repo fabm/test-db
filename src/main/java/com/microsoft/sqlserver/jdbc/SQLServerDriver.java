@@ -1,14 +1,13 @@
 package com.microsoft.sqlserver.jdbc;
 
-import pt.fabm.AppModule;
-import pt.fabm.MockDriver;
+import pt.fabm.mockito.MockitoDbDriver;
 
 import java.sql.*;
 import java.util.Properties;
 import java.util.logging.Logger;
 
 public class SQLServerDriver implements Driver {
-    private Driver mock = AppModule.getInjector().getInstance(MockDriver.class);
+    private Driver mock = new MockitoDbDriver();
 
     @Override
     public Connection connect(String url, Properties info) throws SQLException {

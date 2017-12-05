@@ -1,28 +1,21 @@
-package pt.fabm;
+package pt.fabm.mockito;
 
-
-import com.google.common.reflect.Reflection;
-import com.google.inject.Inject;
-import com.google.inject.Key;
-import com.google.inject.TypeLiteral;
-import com.google.inject.name.Named;
+import org.mockito.Mockito;
 
 import java.sql.*;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.logging.Logger;
 
-public class MockDriver implements Driver {
+public class MockitoDbDriver implements Driver{
+    private static Connection connection = Mockito.mock(Connection.class);
 
-    @Inject
-    @Named("sql-connections")
-    private Map<String, ProxyWrapper<java.sql.Connection>> connections;
-
+    static Connection getConnection() {
+        return connection;
+    }
 
     @Override
     public Connection connect(String url, Properties info) throws SQLException {
-        return connections.get(url).getProxy();
+        return connection;
     }
 
     @Override
