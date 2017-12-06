@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 
 import static org.mockito.Mockito.when;
 
-public class ResultSetAdapter {
+class ResultSetAdapter {
 
     private ResultSet mock;
     private List<List<Object>> rows;
@@ -39,7 +39,7 @@ public class ResultSetAdapter {
         when(mock.next()).then(invocation -> next());
     }
 
-    public void withTypes(String... types) {
+    void withTypes(String... types) {
         this.types = types;
         addGetters();
     }
@@ -88,7 +88,4 @@ public class ResultSetAdapter {
         return result;
     }
 
-    public ResultSet getMock() {
-        return mock;
-    }
 }
