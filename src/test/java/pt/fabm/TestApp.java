@@ -53,7 +53,7 @@ public class TestApp {
         ds.setMinIdle(2);
 
         CompilerConfiguration config = new CompilerConfiguration();
-        config.setScriptBaseClass("pt.fabm.mockito.DbGroovyScript");
+        config.setScriptBaseClass("pt.fabm.mockito.PrepareCallAScript");
         GroovyShell shell = new GroovyShell(config);
         Script script = shell.parse(TestApp.class.getResource("/Script4DB.groovy").toURI());
         script.run();
