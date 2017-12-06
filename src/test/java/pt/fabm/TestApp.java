@@ -4,8 +4,18 @@ import com.google.common.base.Charsets;
 import com.google.common.io.ByteSource;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
+import org.apache.cxf.Bus;
+import org.apache.cxf.BusFactory;
+import org.apache.cxf.endpoint.Client;
+import org.apache.cxf.jaxws.endpoint.dynamic.JaxWsDynamicClientFactory;
+import org.apache.cxf.transport.servlet.CXFNonSpringServlet;
+import org.apache.cxf.transport.servlet.CXFServlet;
 import org.apache.tomcat.jdbc.pool.DataSource;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.ContextHandlerCollection;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -13,11 +23,14 @@ import org.junit.Test;
 import pt.fabm.mockito.MockitoDbDriver;
 
 import javax.jms.*;
+import javax.xml.ws.Endpoint;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
-import java.sql.*;
+import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -123,6 +136,42 @@ public class TestApp {
         session.close();
     }
 
+
+    @Test
+    public void testApacheCxf() throws Exception {
+
+        int port = 9090;
+
+        Server httpServer = new Server(port);
+        ContextHandlerCollection contexts = new ContextHandlerCollection();
+        httpServer.setHandler(contexts);
+        ServletContextHandler root = new ServletContextHandler(contexts, "/",
+                ServletContextHandler.SESSIONS);
+
+        Bus bus = BusFactory.getDefaultBus(true);
+
+        CXFNonSpringServlet cxf = new CXFNonSpringServlet();
+        cxf.setBus(bus);
+        ServletHolder servlet = new ServletHolder(cxf);
+        servlet.setName("soap");
+        servlet.setForcedPath("soap");
+        root.addServlet(servlet, "/soap/*");
+
+        httpServer.start();
+        BusFactory.setDefaultBus(bus);
+
+        Hello hello = name -> "hello, "+ name;
+
+        Endpoint.publish("/Hello", hello);
+
+        JaxWsDynamicClientFactory dcf = JaxWsDynamicClientFactory.newInstance();
+        Client client = dcf.createClient("http://localhost:9090/soap/Hello?wsdl");
+
+        Object[] res = client.invoke("sayHi", "it's me");
+        Assert.assertEquals("hello, it's me",res[0]);
+
+    }
+
     private String receiveMessage() throws JMSException, ExecutionException, InterruptedException {
 
         AsyncResponse<String> asyncResponse = new AsyncResponse<>();
@@ -140,12 +189,9 @@ public class TestApp {
 
         consumer.setMessageListener(m -> {
             try {
-                System.out.println("trying:" + System.nanoTime());
-                Thread.sleep(5000);
-                System.out.println("done:" + System.nanoTime());
-                String t = Optional.ofNullable(m).map(e -> (TextMessage) e).orElse(null).getText();
+                String t = Optional.ofNullable(m).map(TextMessage.class::cast).orElse(null).getText();
                 asyncResponse.setResponse(t);
-            } catch (JMSException | InterruptedException e) {
+            } catch (JMSException e) {
                 e.printStackTrace();
             }
         });
@@ -155,4 +201,8 @@ public class TestApp {
         session2.close();
         return response;
     }
+
+
 }
+
+
